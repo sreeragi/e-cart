@@ -1,22 +1,80 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Header from '../components/Header'
 import { Link } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+
+import { fetchProducts } from '../redux/slices/productSlice'
+import { all } from 'axios'
+
 
 const Home = () => {
+  const dispatch = useDispatch()
+  const {allProducts,loading,errorMsg}=useSelector(state=>state.productReducer)
+  // console.log(allProducts,loading,errorMsg);
+  // pageination
+
+  const [currentPage,setCurrentPage]=useState(1)
+  const productPerPage=8
+  const totalpages=Math.ceil(allProducts?.length/productPerPage)
+  const currentPageProductLastIndex= currentPage* productPerPage
+  const currentPageProductFirstIndex= currentPageProductLastIndex-productPerPage
+  const visibleAllProducts=allProducts?.slice(currentPageProductFirstIndex,currentPageProductLastIndex)
+  
+  useEffect(()=>{
+    dispatch(fetchProducts())
+  },[])
+
+  const navigateToNextPage=()=>{
+    if(currentPage!=totalpages){
+      setCurrentPage(currentPage+1)
+    }
+  }
+  const navigateToPrevPage=()=>{
+    if(currentPage!=1){
+      setCurrentPage(currentPage-1)
+    }
+  }
+
   return (
     <>
-      <Header/>
+      <Header insideHome={true}/>
       <div style={{paddingTop:'100px'}} className='container px-4 mx-auto'>
-        <div className='grid grid-cols-4 gap-4'>
-          <div className='rounded border p-2 shadow'>
-            <img width={'100%'} height={'200px'}  src="https://cdn.shopify.com/s/files/1/0070/7032/articles/ecommerce_20shopping_20cart_4c343e41-1041-49d3-bca8-3d7d1aa06d90.png?v=1729263457" alt="" />
+       {
+        loading?
+        <div className='flex justify-center items-center my-5 text-3xl'>
+          <img width={'200px'} height={'200px'} src="https://wpamelia.com/wp-content/uploads/2018/11/ezgif-2-6d0b072c3d3f.gif" alt="" />
+          Loading....
+        </div>
+        :
+        <>
+         <div className='grid grid-cols-4 gap-4'>
+          {
+            allProducts.length>0?
+            visibleAllProducts?.map(product=>(
+              <div className='rounded border p-2 shadow'>
+            <img width={'100%'} height={'200px'}  src={product?.thumbnail} alt="" />
             <div className='text-center'>
-              <h3 className='text-xl font-bold'>title</h3>
-              <Link to={'/id/view'} className='bg-violet-600 rounded p-1 mt-3 text-white inline-block'>View more...</Link>
+              <h3 className='text-xl font-bold'>{product?.title}</h3>
+              <Link to={`/${product?.id}/view`} className='bg-violet-600 rounded p-1 mt-3 text-white inline-block'>View more...</Link>
             </div>
           </div>
+            ))
+            :
+            <div className='flex justify-center items-center font-bold text-red-600 my-5 text-lg'>
+              Products not found!!!
+            </div>
+          }
         </div>
 
+
+          <div className='text-2xl text-center font-bold mt-20'>
+            <span onClick={navigateToPrevPage} className='cursor-pointer'><i className='fa-solid fa-backward me-5'></i></span>
+            <span>{currentPage} of {totalpages}</span>
+            <span onClick={navigateToNextPage} className='cursor-pointer'><i className='fa-solid fa-forward ms-5'></i> </span>
+          </div>
+
+        </>
+       }
       </div>
     </>
   )
